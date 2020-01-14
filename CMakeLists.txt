@@ -13,6 +13,6 @@ add_definitions(${PCL_DEFINITIONS})
 list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
 
 link_libraries(stdc++fs)
-add_executable(RadHAR_PCL txt_to_pcd_conversion.cpp ESF_feature_extract.cpp ESF_based_HAR.cpp)
+add_executable(RadHAR_PCL txt_to_pcd_conversion.cpp )
 target_link_libraries (RadHAR_PCL ${PCL_LIBRARIES})
 
