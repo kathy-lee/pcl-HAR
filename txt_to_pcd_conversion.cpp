@@ -11,17 +11,17 @@ using namespace std;
 namespace fs = std::experimental::filesystem;
 
 // steps:
-// 1. iterate and read each .txt file from train/test data folder into a pcd object;
+// 1. iterate all .txt files in train/test data folder ,read point clouds into pcd object;
 // 2. write each pcd object into pcd file, save to pcd data path.
 int main(int argc, char **argv) {
     pcl::PointCloud<pcl::PointXYZI> cloud;
 
     //read point cloud data from txt file
     string parent_dir = "/home/kangleli/Projects/RadHAR/Data/";
-    //string sub_dirs[5] = {"boxing","jack","jump","squats","walk"};
-    string data_path;
-    ifstream currentFile;
     string pcd_sub_dir = "PCD_Data/";
+    //string sub_dirs[5] = {"boxing","jack","jump","squats","walk"};
+    ifstream currentFile;
+
     vector<vector<double>> data;
     vector<double> tmpVec(4);
     string tmpString, fileName, dirName;
@@ -46,8 +46,8 @@ int main(int argc, char **argv) {
                     if (tmpString == "point_id:") {
                         currentFile >> tmpString;
                         if (tmpString == "0" && !data.empty()) {
-                            cloud.width = 1;
-                            cloud.height = data.size();
+                            cloud.width = data.size();
+                            cloud.height = 1;
                             cloud.is_dense = false;
                             cloud.points.resize(cloud.width * cloud.height);
                             for (int i = 0; i < data.size(); i++) {
