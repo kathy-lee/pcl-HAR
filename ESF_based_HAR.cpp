@@ -16,8 +16,18 @@ namespace fs = std::experimental::filesystem;
 
 //getESF();
 
-vector<vector<vector<double>>> computeSample(vector<vector<double>> ESFsequence, int timeStep, int slidWindowStep){
+vector<vector<vector<double>>> computeSample(vector<vector<double>> ESFsequence, int width, int slideStep){
+
     vector<vector<vector<double>>> samples;
+
+    for(int i = 0; i < ESFsequence.size(); i += slideStep) {
+        if((i + width + 1) > ESFsequence.size() )
+            break;
+        else{
+            vector<vector<double>> sample( &ESFsequence[i], &ESFsequence[i + width] );
+            samples.push_back(sample);
+        }
+    }
     return samples;
 }
 
@@ -35,17 +45,16 @@ int main (int argc, char** argv) {
     string train_test_dir[2] = {"Train", "Test"};
     string action_dir[5] = {"boxing","jack","jump","squats","walk"};
     string sub_dir;
-    //string p_dir = "/home/kangleli/Projects/RadHAR/PCD_Data/Train/boxing/20_boxing_1/";
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
     int fileNo = 0;
     string fileName;
     vector<vector<double>> ESFsequence;
     vector<vector<vector<double>>> trainDataset, testDataset, samples;
     vector<int> trainLabels, testLabels, labels;
-    int timeStep, slidWindowStep;
+    int width, slideStep;
 
-    timeStep = 0;
-    slidWindowStep = 0;
+    //int timeStep = 0;
+    //int slidWindowStep = 0;
 
     for(int i = 0; i < train_test_dir->size(); i++)
         for(int j = 0; j < action_dir->size(); j++) {
@@ -53,31 +62,31 @@ int main (int argc, char** argv) {
             for (const auto &dirEntry : fs::directory_iterator(sub_dir)) {
                 fileNo = 0;
                 ESFsequence.empty();
-                //for (const auto &fileEntry : fs::directory_iterator(dirEntry)) {
-                    //sort(dirEntry.path().begin(),dirEntry.path().end());
                 fileName = dirEntry.path().string() + "/" + to_string(fileNo) + ".pcd";
                 while (fs::exists(fileName)) {
                     cout << fileName << endl;
+                    // following will be later moved to a function, which input a pcd filename, output its ESF feature:
+                    // getESF();
                     if (pcl::io::loadPCDFile<pcl::PointXYZI>(fileName, *cloud) == -1) {
                         cout << "Couldn't read pcd file. " << endl;
+                        return 0;
                     }
-                    for(int k = 0; k < cloud->points.size(); k++){
-                        cout<< cloud->points[k]<<endl;
-                    }
+                    //for(int k = 0; k < cloud->points.size(); k++){
+                        //cout<< cloud->points[k]<<endl;
+                    //}
                     cout << "Loaded " << cloud->points.size() << " data points from " + fileName << endl;
-                    //getESF();
                     pcl::PointCloud<pcl::ESFSignature640>::Ptr descriptor(new pcl::PointCloud<pcl::ESFSignature640>);
                     pcl::ESFEstimation<pcl::PointXYZI, pcl::ESFSignature640> esf;
                     esf.setInputCloud(cloud);
                     esf.compute(*descriptor);
                     vector<double> feature(begin(descriptor->points[0].histogram),
                                            end(descriptor->points[0].histogram));
+
                     ESFsequence.push_back(feature);
                     fileNo++;
                     fileName = dirEntry.path().string() + "/" + to_string(fileNo) + ".pcd";
                 }
-                //}
-                samples = computeSample(ESFsequence,timeStep,slidWindowStep);
+                samples = computeSample(ESFsequence, 60, 10);
                 labels = vector<int>(samples.size(), j);
                 if ( i == 0){
                     trainDataset.insert(trainDataset.end(), begin(samples), end(samples));
@@ -90,8 +99,6 @@ int main (int argc, char** argv) {
             }
         }
 
-    //train_dataset = createDataset(ESFfeature,"train");
-    //test_dataset = createDataset(ESFfeature,"test");
     //model = trainModel(train_dataset,"SVM");
     //result = predict(test_dataset);
     //accuracy = evaluate(result,label);
