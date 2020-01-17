@@ -10,6 +10,15 @@
 #include <pcl/features/impl/esf.hpp>
 #include <pcl/visualization/pcl_plotter.h>
 
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/export.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/list.hpp>
+#include <sstream>
+#include <fstream>
+
 using namespace std;
 namespace fs = std::experimental::filesystem;
 
@@ -31,6 +40,24 @@ vector<vector<vector<double>>> computeSample(vector<vector<double>> ESFsequence,
     return samples;
 }
 
+template <class T>
+void saveFeaturesFile(T &features, string &filename){
+    ofstream out(filename.c_str());
+    stringstream ss;
+    boost::archive::binary_oarchive oa(ss);
+    oa << features;
+    out << ss.str();
+    out.close();
+}
+
+template <class T>
+void loadFeaturesFile(T &features, string &filename){
+    ifstream in(filename.c_str());
+    boost::archive::binary_iarchive ia(in);
+    ia >> features;
+    in.close();
+}
+
 int main (int argc, char** argv) {
 
     // steps:
@@ -41,7 +68,8 @@ int main (int argc, char** argv) {
     // 6. train SVM/LSTM model;
     // 7. predict and evaluate.
 
-    string parent_dir = "/home/kangleli/Projects/RadHAR/PCD_Data/";
+    //string parent_dir = "/home/kangleli/Projects/RadHAR/PCD_Data/";
+    string parent_dir = "/home/kangleli/datasets/PCD_Data/";
     string train_test_dir[2] = {"Train", "Test"};
     string action_dir[5] = {"boxing","jack","jump","squats","walk"};
     string sub_dir;
@@ -74,6 +102,8 @@ int main (int argc, char** argv) {
                     //for(int k = 0; k < cloud->points.size(); k++){
                         //cout<< cloud->points[k]<<endl;
                     //}
+                    if(fileName == "/home/kangleli/datasets/PCD_Data/Train/walk/___20_walk_2/62.pcd")
+                        cout<< "!" << endl;
                     cout << "Loaded " << cloud->points.size() << " data points from " + fileName << endl;
                     pcl::PointCloud<pcl::ESFSignature640>::Ptr descriptor(new pcl::PointCloud<pcl::ESFSignature640>);
                     pcl::ESFEstimation<pcl::PointXYZI, pcl::ESFSignature640> esf;
@@ -98,6 +128,21 @@ int main (int argc, char** argv) {
                 }
             }
         }
+
+    // serialize train/test dataset
+    parent_dir = "/home/kangleli/Projects/RadHAR_PCL/";
+    string filename = parent_dir + "train_feature_data.bin";
+    saveFeaturesFile(trainDataset, filename);
+    cout << "train dataset saved." << endl;
+    filename = parent_dir + "test_feature_data.bin";
+    saveFeaturesFile(testDataset,filename);
+    cout << "test dataset saved." << endl;
+    filename = parent_dir + "train_label.bin";
+    saveFeaturesFile(trainLabels,filename);
+    cout << "train label saved." << endl;
+    filename = parent_dir + "test_label.bin";
+    saveFeaturesFile(testLabels, filename);
+    cout << "test label saved." << endl;
 
     //model = trainModel(train_dataset,"SVM");
     //result = predict(test_dataset);
