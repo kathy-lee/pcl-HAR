@@ -23,12 +23,29 @@ using namespace std;
 namespace fs = std::experimental::filesystem;
 
 
-//getESF();
+vector<double> getESF(const string& fileName)
+{
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    if (pcl::io::loadPCDFile<pcl::PointXYZI>(fileName, *cloud) == -1) {
+        cout << "Couldn't read pcd file. " << endl;
+        return {};
+    }
+    //for(int k = 0; k < cloud->points.size(); k++){
+    //cout<< cloud->points[k]<<endl;
+    //}
+    cout << "Loaded " << cloud->points.size() << " data points from " + fileName << endl;
+    pcl::PointCloud<pcl::ESFSignature640>::Ptr descriptor(new pcl::PointCloud<pcl::ESFSignature640>);
+    pcl::ESFEstimation<pcl::PointXYZI, pcl::ESFSignature640> esf;
+    esf.setInputCloud(cloud);
+    esf.compute(*descriptor);
+    vector<double> feature(begin(descriptor->points[0].histogram),
+                           end(descriptor->points[0].histogram));
+    return feature;
+}
 
-vector<vector<vector<double>>> computeSample(vector<vector<double>> ESFsequence, int width, int slideStep) {
-
+vector<vector<vector<double>>> computeSample(vector<vector<double>> ESFsequence, int width, int slideStep)
+{
     vector<vector<vector<double>>> samples;
-
     for (unsigned int i = 0; i < ESFsequence.size(); i += slideStep) {
         if ((i + width + 1) > ESFsequence.size())
             break;
@@ -73,7 +90,6 @@ int main(int argc, char **argv) {
     const string train_test_dir[] = {"Train", "Test"};
     const string action_dir[] = {"boxing", "jack", "jump", "squats", "walk"};
     string sub_dir;
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
     int fileNo = 0;
     string fileName;
     vector<vector<double>> ESFsequence;
@@ -89,23 +105,8 @@ int main(int argc, char **argv) {
                 fileName = dirEntry.path().string() + "/" + to_string(fileNo) + ".pcd";
                 while (fs::exists(fileName)) {
                     cout << fileName << endl;
-                    // following will be later moved to a function, which input a pcd filename, output its ESF feature:
-                    // getESF();
-                    if (pcl::io::loadPCDFile<pcl::PointXYZI>(fileName, *cloud) == -1) {
-                        cout << "Couldn't read pcd file. " << endl;
-                        return 0;
-                    }
-                    //for(int k = 0; k < cloud->points.size(); k++){
-                    //cout<< cloud->points[k]<<endl;
-                    //}
-                    cout << "Loaded " << cloud->points.size() << " data points from " + fileName << endl;
-                    pcl::PointCloud<pcl::ESFSignature640>::Ptr descriptor(new pcl::PointCloud<pcl::ESFSignature640>);
-                    pcl::ESFEstimation<pcl::PointXYZI, pcl::ESFSignature640> esf;
-                    esf.setInputCloud(cloud);
-                    esf.compute(*descriptor);
-                    vector<double> feature(begin(descriptor->points[0].histogram),
-                                           end(descriptor->points[0].histogram));
-
+                    vector<double> feature;
+                    feature = getESF(fileName);
                     ESFsequence.push_back(feature);
                     fileNo++;
                     fileName = dirEntry.path().string() + "/" + to_string(fileNo) + ".pcd";
