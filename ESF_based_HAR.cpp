@@ -25,23 +25,23 @@ namespace fs = std::experimental::filesystem;
 
 //getESF();
 
-vector<vector<vector<double>>> computeSample(vector<vector<double>> ESFsequence, int width, int slideStep){
+vector<vector<vector<double>>> computeSample(vector<vector<double>> ESFsequence, int width, int slideStep) {
 
     vector<vector<vector<double>>> samples;
 
-    for(int i = 0; i < ESFsequence.size(); i += slideStep) {
-        if((i + width + 1) > ESFsequence.size() )
+    for (unsigned int i = 0; i < ESFsequence.size(); i += slideStep) {
+        if ((i + width + 1) > ESFsequence.size())
             break;
-        else{
-            vector<vector<double>> sample( &ESFsequence[i], &ESFsequence[i + width] );
+        else {
+            vector<vector<double>> sample(&ESFsequence[i], &ESFsequence[i + width]);
             samples.push_back(sample);
         }
     }
     return samples;
 }
 
-template <class T>
-void saveFeaturesFile(T &features, string &filename){
+template<class T>
+void saveFeaturesFile(T &features, string &filename) {
     ofstream out(filename.c_str());
     stringstream ss;
     boost::archive::binary_oarchive oa(ss);
@@ -50,15 +50,15 @@ void saveFeaturesFile(T &features, string &filename){
     out.close();
 }
 
-template <class T>
-void loadFeaturesFile(T &features, string &filename){
+template<class T>
+void loadFeaturesFile(T &features, string &filename) {
     ifstream in(filename.c_str());
     boost::archive::binary_iarchive ia(in);
     ia >> features;
     in.close();
 }
 
-int main (int argc, char** argv) {
+int main(int argc, char **argv) {
 
     // steps:
     // 1. load .pcd file in train/test data folder;
@@ -70,8 +70,8 @@ int main (int argc, char** argv) {
 
     //string parent_dir = "/home/kangleli/Projects/RadHAR/PCD_Data/";
     string parent_dir = "/home/kangleli/datasets/PCD_Data/";
-    string train_test_dir[2] = {"Train", "Test"};
-    string action_dir[5] = {"boxing","jack","jump","squats","walk"};
+    const string train_test_dir[] = {"Train", "Test"};
+    const string action_dir[] = {"boxing", "jack", "jump", "squats", "walk"};
     string sub_dir;
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
     int fileNo = 0;
@@ -79,17 +79,13 @@ int main (int argc, char** argv) {
     vector<vector<double>> ESFsequence;
     vector<vector<vector<double>>> trainDataset, testDataset, samples;
     vector<int> trainLabels, testLabels, labels;
-    int width, slideStep;
 
-    //int timeStep = 0;
-    //int slidWindowStep = 0;
-
-    for(int i = 0; i < train_test_dir->size(); i++)
-        for(int j = 0; j < action_dir->size(); j++) {
+    for (unsigned int i = 0; i < sizeof(train_test_dir)/sizeof(train_test_dir[0]); i++)
+        for (unsigned int j = 0; j < sizeof(action_dir)/sizeof(action_dir[0]); j++) {
             sub_dir = parent_dir + train_test_dir[i] + "/" + action_dir[j];
             for (const auto &dirEntry : fs::directory_iterator(sub_dir)) {
                 fileNo = 0;
-                ESFsequence.empty();
+                ESFsequence.clear();
                 fileName = dirEntry.path().string() + "/" + to_string(fileNo) + ".pcd";
                 while (fs::exists(fileName)) {
                     cout << fileName << endl;
@@ -100,10 +96,8 @@ int main (int argc, char** argv) {
                         return 0;
                     }
                     //for(int k = 0; k < cloud->points.size(); k++){
-                        //cout<< cloud->points[k]<<endl;
+                    //cout<< cloud->points[k]<<endl;
                     //}
-                    if(fileName == "/home/kangleli/datasets/PCD_Data/Train/walk/___20_walk_2/62.pcd")
-                        cout<< "!" << endl;
                     cout << "Loaded " << cloud->points.size() << " data points from " + fileName << endl;
                     pcl::PointCloud<pcl::ESFSignature640>::Ptr descriptor(new pcl::PointCloud<pcl::ESFSignature640>);
                     pcl::ESFEstimation<pcl::PointXYZI, pcl::ESFSignature640> esf;
@@ -118,16 +112,20 @@ int main (int argc, char** argv) {
                 }
                 samples = computeSample(ESFsequence, 60, 10);
                 labels = vector<int>(samples.size(), j);
-                if ( i == 0){
+                if (i == 0) {
                     trainDataset.insert(trainDataset.end(), begin(samples), end(samples));
                     trainLabels.insert(trainLabels.end(), begin(labels), end(labels));
-                }
-                else {
-                    testDataset.insert(trainDataset.end(), begin(samples), end(samples));
-                    testLabels.insert(trainLabels.end(), begin(labels), end(labels));
+                } else {
+                    testDataset.insert(testDataset.end(), begin(samples), end(samples));
+                    testLabels.insert(testLabels.end(), begin(labels), end(labels));
                 }
             }
         }
+
+    //    vector <int>().swap(ESFsequence);
+//    ESFsequence.swap(vector<int>()) ;
+//    cout << ESFsequence.capacity() << endl;
+//    cout <<  ESFsequence.size() << endl;
 
     // serialize train/test dataset
     parent_dir = "/home/kangleli/Projects/RadHAR_PCL/";
@@ -135,10 +133,10 @@ int main (int argc, char** argv) {
     saveFeaturesFile(trainDataset, filename);
     cout << "train dataset saved." << endl;
     filename = parent_dir + "test_feature_data.bin";
-    saveFeaturesFile(testDataset,filename);
+    saveFeaturesFile(testDataset, filename);
     cout << "test dataset saved." << endl;
     filename = parent_dir + "train_label.bin";
-    saveFeaturesFile(trainLabels,filename);
+    saveFeaturesFile(trainLabels, filename);
     cout << "train label saved." << endl;
     filename = parent_dir + "test_label.bin";
     saveFeaturesFile(testLabels, filename);

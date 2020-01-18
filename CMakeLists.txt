@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.15)
 project(RadHAR_PCL)
 
-set(CXX_FLAGS "-Wall")
-set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
+set(CXX_FLAGS "-Wall -O0")
+set(CMAKE_CXX_FLAGS "${CXX_FLAGS}")
+#set(CMAKE_CXX_FLAGS_DEBUG "${CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+message(${CMAKE_CXX_FLAGS_DEBUG})
 set(CMAKE_CXX_STANDARD 14)
 
 find_package(PCL 1.8 REQUIRED)
