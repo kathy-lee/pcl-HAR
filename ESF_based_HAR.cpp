@@ -23,7 +23,7 @@ using namespace std;
 namespace fs = std::experimental::filesystem;
 
 
-vector<double> getESF(const string& fileName)
+vector<float> getESF(const string& fileName)
 {
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
     if (pcl::io::loadPCDFile<pcl::PointXYZI>(fileName, *cloud) == -1) {
@@ -33,24 +33,24 @@ vector<double> getESF(const string& fileName)
     //for(int k = 0; k < cloud->points.size(); k++){
     //cout<< cloud->points[k]<<endl;
     //}
-    cout << "Loaded " << cloud->points.size() << " data points from " + fileName << endl;
+    //cout << "Loaded " << cloud->points.size() << " data points from " + fileName << endl;
     pcl::PointCloud<pcl::ESFSignature640>::Ptr descriptor(new pcl::PointCloud<pcl::ESFSignature640>);
     pcl::ESFEstimation<pcl::PointXYZI, pcl::ESFSignature640> esf;
     esf.setInputCloud(cloud);
     esf.compute(*descriptor);
-    vector<double> feature(begin(descriptor->points[0].histogram),
+    vector<float> feature(begin(descriptor->points[0].histogram),
                            end(descriptor->points[0].histogram));
     return feature;
 }
 
-vector<vector<vector<double>>> computeSample(vector<vector<double>> ESFsequence, int width, int slideStep)
+vector<vector<vector<float>>> computeSample(vector<vector<float>> ESFsequence, int width, int slideStep)
 {
-    vector<vector<vector<double>>> samples;
+    vector<vector<vector<float>>> samples;
     for (unsigned int i = 0; i < ESFsequence.size(); i += slideStep) {
         if ((i + width + 1) > ESFsequence.size())
             break;
         else {
-            vector<vector<double>> sample(&ESFsequence[i], &ESFsequence[i + width]);
+            vector<vector<float>> sample(&ESFsequence[i], &ESFsequence[i + width]);
             samples.push_back(sample);
         }
     }
@@ -85,27 +85,28 @@ int main(int argc, char **argv) {
     // 6. train SVM/LSTM model;
     // 7. predict and evaluate.
 
-    //string parent_dir = "/home/kangleli/Projects/RadHAR/PCD_Data/";
-    string parent_dir = "/home/kangleli/datasets/PCD_Data/";
+    string parent_dir = "/home/kangleli/Projects/RadHAR/PCD_Data/";
+    //string parent_dir = "/home/kangleli/datasets/PCD_Data/";
     const string train_test_dir[] = {"Train", "Test"};
     const string action_dir[] = {"boxing", "jack", "jump", "squats", "walk"};
     string sub_dir;
     int fileNo = 0;
     string fileName;
-    vector<vector<double>> ESFsequence;
-    vector<vector<vector<double>>> trainDataset, testDataset, samples;
+    vector<vector<float>> ESFsequence;
+    vector<vector<vector<float>>> trainDataset, testDataset, samples;
     vector<int> trainLabels, testLabels, labels;
 
     for (unsigned int i = 0; i < sizeof(train_test_dir)/sizeof(train_test_dir[0]); i++)
         for (unsigned int j = 0; j < sizeof(action_dir)/sizeof(action_dir[0]); j++) {
             sub_dir = parent_dir + train_test_dir[i] + "/" + action_dir[j];
             for (const auto &dirEntry : fs::directory_iterator(sub_dir)) {
+                cout << "get feature from " << dirEntry.path() << "..." << endl;
                 fileNo = 0;
                 ESFsequence.clear();
                 fileName = dirEntry.path().string() + "/" + to_string(fileNo) + ".pcd";
                 while (fs::exists(fileName)) {
-                    cout << fileName << endl;
-                    vector<double> feature;
+                    //cout << fileName << endl;
+                    vector<float> feature;
                     feature = getESF(fileName);
                     ESFsequence.push_back(feature);
                     fileNo++;

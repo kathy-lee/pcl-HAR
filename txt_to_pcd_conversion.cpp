@@ -22,10 +22,10 @@ int main(int argc, char **argv) {
     //string sub_dirs[5] = {"boxing","jack","jump","squats","walk"};
     ifstream currentFile;
 
-    vector<vector<double>> data;
-    vector<double> tmpVec(4);
+    vector<vector<float>> data;
+    vector<float> tmpVec(4);
     string tmpString, fileName, dirName;
-    double tmpNum;
+    float tmpNum;
     int fileCount;
 
     for (const auto &dirEntry : fs::recursive_directory_iterator(parent_dir)) {
@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
                             cloud.height = 1;
                             cloud.is_dense = false;
                             cloud.points.resize(cloud.width * cloud.height);
-                            for (int i = 0; i < data.size(); i++) {
+                            for (unsigned int i = 0; i < data.size(); i++) {
                                 cloud.points[i].x = data[i][0];
                                 cloud.points[i].y = data[i][1];
                                 cloud.points[i].z = data[i][2];
